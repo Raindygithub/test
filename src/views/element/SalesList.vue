@@ -1,0 +1,291 @@
+<template>
+    <div>
+        <page-tools :show-before="true">
+            <span slot="before">共{{ this.tableData.length }}条记录</span>
+            <template slot="after">
+            <el-button type="danger" @click="Deletes()" icon="el-icon-delete">批量删除</el-button>
+            </template>
+        </page-tools>
+        <!-- 表格 -->
+        <el-tabs v-model="activeName" @tab-click="handleClick">
+            <el-tab-pane label="商品销售榜单" name="first">
+                <el-form :inline="true" :model="SearchForm" class="demo-form-inline">
+                    <el-form-item prop="year">
+                        <el-date-picker
+                            v-model="SearchForm.year"
+                            type="year"
+                            placeholder="选择年">
+                        </el-date-picker>
+                    </el-form-item>
+                    <el-form-item prop="month">
+                        <el-date-picker
+                            v-model="SearchForm.month"
+                            type="month"
+                            placeholder="选择月">
+                        </el-date-picker>
+                    </el-form-item>
+                    <el-form-item prop="g_type">
+                            <el-select v-model="SearchForm.g_type" placeholder="商品类型">
+                                <el-option label="日用型" value=0></el-option>
+                                <el-option label="食品类" value=1></el-option>
+                                <el-option label="儿童类" value=2></el-option>
+                                <el-option label="服装类" value=3></el-option>
+                                <el-option label="工具类" value=4></el-option>
+                            </el-select>
+                    </el-form-item>
+                    <el-form-item>
+                        <el-button type="primary" @click="onSubmit">查询</el-button>
+                    </el-form-item>
+                </el-form>
+                <el-table
+                    ref="multipleTable"
+                    :data="tableData.slice((currentPage-1)*pagesize,currentPage*pagesize)"
+                    tooltip-effect="dark"
+                    style="width: 100%" border 
+                    stripe
+                    @selection-change="handleSelectionChange">
+                    <el-table-column
+                        type="selection"
+                        width="55">
+                    </el-table-column>
+                    <el-table-column
+                        type="index"
+                        :index="indexMethod">
+                    </el-table-column>
+                    <el-table-column prop="top" label="排名" width="180"></el-table-column>
+                    <el-table-column prop="p_no" label="商品编码" width="180"></el-table-column>
+                    <el-table-column prop="g_name" label="商品名称" width="180"></el-table-column>
+                    <el-table-column label="图片" width="180">
+                        <template slot-scope="scope">
+                            <img :src="scope.row.g_image" width="100px" height="70px"/>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="x_price" label="单价" width="180">
+                        <template slot-scope="scope">
+                            {{ "￥ " }}{{scope.row.x_price}}
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="x_num" label="数量" width="180"></el-table-column>
+                    <el-table-column prop="sum_price" label="总售价" width="180">
+                        <template slot-scope="scope">
+                            {{ "￥ " }}{{scope.row.sum_price}}
+                        </template>
+                    </el-table-column>
+                    <el-table-column fixed="right" label="操作" width="180">
+                        <template slot-scope="scope">
+                            <el-button type="primary" icon="el-icon-edit" circle @click="Detail(scope.$index)"></el-button>
+                            <el-button @click="handleDelete(scope.$index)" type="danger" icon="el-icon-delete" circle></el-button>
+                        </template>
+                    </el-table-column>
+                    </el-table>
+                    <!-- 分页 -->
+                    
+                    <div style="margin-top:.2rem;margin-left: .2rem;">
+                        <el-pagination 
+                            @size-change="handleSizeChange"
+                            @current-change="handleCurrentChange"
+                            :current-page="currentPage"
+                            :page-sizes="[5,7,10]"
+                            :page-size="pagesize"
+                            layout="total, sizes, prev, pager, next, jumper"
+                            :total="tableData.length">
+                        </el-pagination>
+                    </div>
+            </el-tab-pane>
+            <el-tab-pane label="员工销售榜单" name="second">
+                <el-form :inline="true" :model="SearchForm" class="demo-form-inline">
+                    <el-form-item prop="year">
+                        <el-date-picker
+                            v-model="SearchForm.year"
+                            type="year"
+                            placeholder="选择年">
+                        </el-date-picker>
+                    </el-form-item>
+                    <el-form-item prop="month">
+                        <el-date-picker
+                            v-model="SearchForm.month"
+                            type="month"
+                            placeholder="选择月">
+                        </el-date-picker>
+                    </el-form-item>
+                    <el-form-item>
+                        <el-button type="primary" @click="onSubmit">查询</el-button>
+                    </el-form-item>
+                </el-form>
+                <el-table
+                    ref="multipleTable"
+                    :data="tableData.slice((currentPage-1)*pagesize,currentPage*pagesize)"
+                    tooltip-effect="dark"
+                    style="width: 100%" border 
+                    stripe
+                    @selection-change="handleSelectionChange">
+                    <el-table-column
+                        type="selection"
+                        width="55">
+                    </el-table-column>
+                    <el-table-column
+                        type="index"
+                        :index="indexMethod">
+                    </el-table-column>
+                    <el-table-column prop="top" label="排名" width="180"></el-table-column>
+                    <el-table-column prop="e_no" label="员工编号" width="180"></el-table-column>
+                    <el-table-column prop="e_name" label="姓名" width="180"></el-table-column>
+                    <el-table-column label="图片" width="180">
+                        <template slot-scope="scope">
+                            <img :src="scope.row.e_pic" width="100px" height="70px"/>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="sum_price" label="总额" width="180">
+                        <template slot-scope="scope">
+                            {{ "￥ " }}{{scope.row.sum_price}}
+                        </template>
+                    </el-table-column>
+                    <el-table-column fixed="right" label="操作" width="180">
+                        <template slot-scope="scope">
+                            <el-button type="primary" icon="el-icon-edit" circle @click="Detail(scope.$index)"></el-button>
+                            <el-button @click="handleDelete(scope.$index)" type="danger" icon="el-icon-delete" circle></el-button>
+                        </template>
+                    </el-table-column>
+                    </el-table>
+                    <!-- 分页 -->
+                    
+                    <div style="margin-top:.2rem;margin-left: .2rem;">
+                        <el-pagination 
+                            @size-change="handleSizeChange"
+                            @current-change="handleCurrentChange"
+                            :current-page="currentPage"
+                            :page-sizes="[5,7,10]"
+                            :page-size="pagesize"
+                            layout="total, sizes, prev, pager, next, jumper"
+                            :total="tableData.length">
+                        </el-pagination>
+                    </div>
+            </el-tab-pane>
+        </el-tabs>
+        
+    </div>
+</template>
+
+<script>
+import axios from 'axios';
+export default {
+    data(){
+        return{
+            dialogVisible:false,
+            PicVisible:false,
+            checkedDetail:[],
+            tableData:[],
+            sizes:10,
+            currentPage: 1,
+            currentIndex: '',
+            pagesize: 7,
+            filename: null,
+            f64: null,
+            loadImage: "",
+            imgSrc:require('../../assets/img/V.png'),
+            SearchForm:{
+                year:'',
+                month:'',
+                g_type:'',
+            },
+            activeName:'first',
+        }
+    },
+    methods:{
+        indexMethod(index) {
+            return index +1;
+        },
+      // 删除单个行
+        handleDelete(index) {
+            this.tableData.splice(index, 1);
+            this.sums();
+        },
+        //清空List
+        Clear(){
+        this.tableData=undefined;
+        },
+        //单选框选中数据
+        handleSelectionChange(selection) {
+            //如果缓存中已有数据，则清空
+            if (selection.length < 1) {
+                this.$refs.multipleTable.clearSelection();
+                this.$refs.multipleTable.toggleRowSelection(selection.pop());
+            } else {
+                //将选中行存入缓存中
+                this.checkedDetail = selection;
+            }
+        },
+        Deletes()
+        {
+            if (this.checkedDetail.length == 0) {
+                this.$alert("请先选择要删除的数据", "提示", {
+                confirmButtonText: "确定",
+                });
+            } else{
+                 this.checkedDetail.forEach(element => {
+                    if(element!=undefined)
+                    for(let i=0;i<this.tableData.length;i++){
+                        console.log(element);
+                        if(this.tableData[i].vno===element.vno){
+                            this.tableData.splice(i,1);
+                            break;
+                        }
+                    }
+                }); 
+                this.checkedDetail=[];
+            }
+
+        },
+        handleSizeChange(val) {
+        this.pagesize = val;
+        console.log(`每页 ${val} 条`);
+      },
+      handleCurrentChange(val) {
+        this.currentPage= val
+      },
+      handleClose(done) {
+            this.$confirm('确认关闭？')
+            .then(_ => {
+                done();
+            })
+            .catch(_ => {});
+        },
+        resetForm(formName) {
+            this.$refs[formName].resetFields();
+        },
+        onSubmit(){
+            if(this.activeName==='first')
+                axios.get('emp/sales/salesList/product',{params:this.SearchForm}).then(res=>{
+                    let result = res.data.code;
+                    let data = res.data.data;
+                    let message=res.data.msg;
+                    if(result){
+                        console.log();
+                        this.tableData=data;
+                    }else{
+                        alert('error');
+                    }
+                });
+            else{
+                axios.get('emp/sales/salesList/emp',{params:this.SearchForm}).then(res=>{
+                    let result = res.data.code;
+                    let data = res.data.data;
+                    let message=res.data.msg;
+                    if(result){
+                        console.log();
+                        this.tableData=data;
+                    }else{
+                        alert('error');
+                    }
+                });
+            }
+        },
+        handleClick(){
+            this.tableData=[];
+        }
+    },
+    mounted:{
+
+    }
+}
+</script>
